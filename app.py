@@ -128,7 +128,7 @@ try:
             
             st.success(f"{t['min_force']} **{forza_totale:,.0f} kN**")
              if forza_loco > 0:
-            special_message = ""
+                 special_message = ""
             
             if forza_loco > 0:
                 st.info(f"{t['loco_force']} **{forza_loco} kN**")
