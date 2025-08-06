@@ -126,7 +126,7 @@ try:
 
             forza_rimanente = max(forza_totale - forza_loco, 0)
             
-            st.success(f"{t['min_force']} **{forza_totale:,.0f} kN**")
+      st.success(f"{t['min_force']} **{forza_totale:,.0f} kN**")
 if forza_loco > 0:
     special_message = ""
             
