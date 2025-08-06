@@ -55,7 +55,7 @@ st.title(t["title"])
 
 # Caricamento del file CSV
 try:
-    df = pd.read_csv("/Users/fiorentinorullo/Desktop/forza/ritenuta.csv", index_col=0)
+    
     df = pd.read_csv("ritenuta.csv", index_col=0)
 
     # Pulizia delle colonne
