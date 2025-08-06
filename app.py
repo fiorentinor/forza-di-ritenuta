@@ -55,8 +55,9 @@ st.title(t["title"])
 
 # Caricamento del file CSV
 try:
+    df = pd.read_csv("/Users/fiorentinorullo/Desktop/forza/ritenuta.csv", index_col=0)
     df = pd.read_csv("ritenuta.csv", index_col=0)
-    
+
     # Pulizia delle colonne
     df = df[[col for col in df.columns if col.replace(',', '.').replace('‰', '').strip().replace(' ', '').isdigit()]]
     df.columns = df.columns.astype(float)
@@ -65,7 +66,7 @@ try:
 
     # Dizionario delle locomotive e forza generata
     locomotive_forze = {'Re 420': 50, 'Re 421': 50, 'Re 430': 50, 'Ae 1042': 56, 'Re 482': 57, 'Tm III': 19, 'Tm IV': 19, 'Re 474': 53, 'BR 185': 57, 'BR 187': 53, 'BR 186': 54, 'BR 189': 53, 'BR 193': 56}
-    
+
     # Contenitore per gli input
     with st.container():
         st.header(t["convoy_params_header"])
@@ -74,7 +75,7 @@ try:
             loco1 = st.selectbox(t["loco1_label"], [""] + list(locomotive_forze.keys()))
         with col2:
             loco2 = st.selectbox(t["loco2_label"], [""] + list(locomotive_forze.keys()))
-        
+
         peso = st.number_input(t["peso_label"], min_value=0, step=1)
         pendenza = st.number_input(t["pendenza_label"], min_value=0, step=1)
 
@@ -90,7 +91,7 @@ try:
         # Interpola per il peso alla pendenza_bassa
         peso_basso_forza_pendenza_bassa = df.loc[weights[weights <= peso].max(), pendenza_bassa] if any(weights <= peso) else df.loc[weights.min(), pendenza_bassa]
         peso_alto_forza_pendenza_bassa = df.loc[weights[weights >= peso].min(), pendenza_bassa] if any(weights >= peso) else df.loc[weights.max(), pendenza_bassa]
-        
+
         if peso_basso_forza_pendenza_bassa == peso_alto_forza_pendenza_bassa:
             forza_pendenza_bassa = peso_basso_forza_pendenza_bassa
         else:
@@ -99,7 +100,7 @@ try:
         # Interpola per il peso alla pendenza_alta
         peso_basso_forza_pendenza_alta = df.loc[weights[weights <= peso].max(), pendenza_alta] if any(weights <= peso) else df.loc[weights.min(), pendenza_alta]
         peso_alto_forza_pendenza_alta = df.loc[weights[weights >= peso].min(), pendenza_alta] if any(weights >= peso) else df.loc[weights.max(), pendenza_alta]
-        
+
         if peso_basso_forza_pendenza_alta == peso_alto_forza_pendenza_alta:
             forza_pendenza_alta = peso_basso_forza_pendenza_alta
         else:
@@ -125,11 +126,8 @@ try:
                 forza_loco += locomotive_forze[loco2]
 
             forza_rimanente = max(forza_totale - forza_loco, 0)
-            
-                st.success(f"{t['min_force']} **{forza_totale:,.0f} kN**")
-            if forza_loco > 0:
-                special_message = ""
-            
+
+            st.success(f"{t['min_force']} **{forza_totale:,.0f} kN**")
             if forza_loco > 0:
                 st.info(f"{t['loco_force']} **{forza_loco} kN**")
                 st.warning(f"{t['rem_force']} **{forza_rimanente:,.0f} kN**")
