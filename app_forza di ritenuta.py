@@ -1,9 +1,5 @@
 import streamlit as st
 import pandas as pd
-import os
-import streamlit as st
-
-st.write("📁 File visibili nella directory:", os.listdir())
 
 # Dizionario delle traduzioni
 translations = {
@@ -59,7 +55,7 @@ st.title(t["title"])
 
 # Caricamento del file CSV
 try:
-    df = pd.read_csv("/Users/fiorentinorullo/Desktop/forza/forzaritenuta.csv", index_col=0)
+    df = pd.read_csv("/Users/fiorentinorullo/Desktop/forza/ritenuta.csv", index_col=0)
     
     # Pulizia delle colonne
     df = df[[col for col in df.columns if col.replace(',', '.').replace('‰', '').strip().replace(' ', '').isdigit()]]
