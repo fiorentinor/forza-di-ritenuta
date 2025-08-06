@@ -65,11 +65,6 @@ try:
 
     # Dizionario delle locomotive e forza generata
     locomotive_forze = {'Re 420': 50, 'Re 421': 50, 'Re 430': 50, 'Ae 1042': 56, 'Re 482': 57, 'Tm III': 19, 'Tm IV': 19, 'Re 474': 53, 'BR 185': 57, 'BR 187': 53, 'BR 186': 54, 'BR 189': 53, 'BR 193': 56}
-
-    # Messaggi speciali per le locomotive che hanno 2 freni a mano
-special_loco_messages = {
-    "it": "(entrambi i freni a mano)",
-    "de": "(beide Handbremse)"
     
     # Contenitore per gli input
     with st.container():
@@ -134,14 +129,8 @@ special_loco_messages = {
             st.success(f"{t['min_force']} **{forza_totale:,.0f} kN**")
              if forza_loco > 0:
             special_message = ""
-            if loco1 in ['Re 420', 'Re 421', 'Re 430'] or loco2 in ['Re 420', 'Re 421', 'Re 430']:
-                special_message = special_loco_messages[lang_code]
-                
-            st.info(f"{t['loco_force']} **{forza_loco} kN** {special_message}")
-            st.warning(f"{t['rem_force']} **{forza_rimanente:,.0f} kN**")
             
-        if pendenza > 20:
-            st.info(t["staffa_warning"])            if forza_loco > 0:
+            if forza_loco > 0:
                 st.info(f"{t['loco_force']} **{forza_loco} kN**")
                 st.warning(f"{t['rem_force']} **{forza_rimanente:,.0f} kN**")
             if pendenza > 20:
