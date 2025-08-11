@@ -84,27 +84,29 @@ try:
         if pendenza > 30:
             return None
 
-        # Modifica alla logica di selezione della pendenza
+        # Seleziona la colonna corretta per le pendenze basse senza interpolazione
         if pendenza <= 2.5:
-            pendenza_col = 2.5
-        elif pendenza <= 5:
-            pendenza_col = 5.0
-        else:
-            pendenza_bassa = max([s for s in slopes if s <= pendenza], default=slopes.min())
-            pendenza_alta = min([s for s in slopes if s >= pendenza], default=slopes.max())
-            pendenza_col = pendenza_alta if pendenza_alta == pendenza_bassa else None
-
-        if pendenza_col is not None:
-            # Calcolo solo con la colonna pendenza_col
-            peso_basso_forza = df.loc[weights[weights <= peso].max(), pendenza_col] if any(weights <= peso) else df.loc[weights.min(), pendenza_col]
-            peso_alto_forza = df.loc[weights[weights >= peso].min(), pendenza_col] if any(weights >= peso) else df.loc[weights.max(), pendenza_col]
+            pendenza_usata = 2.5
+            peso_basso_forza = df.loc[weights[weights <= peso].max(), pendenza_usata] if any(weights <= peso) else df.loc[weights.min(), pendenza_usata]
+            peso_alto_forza = df.loc[weights[weights >= peso].min(), pendenza_usata] if any(weights >= peso) else df.loc[weights.max(), pendenza_usata]
             
             if peso_basso_forza == peso_alto_forza:
                 return int(round(peso_basso_forza))
             else:
                 return int(round(peso_basso_forza + (peso_alto_forza - peso_basso_forza) * ((peso - weights[weights <= peso].max()) / (weights[weights >= peso].min() - weights[weights <= peso].max()))))
+        
+        elif pendenza <= 5:
+            pendenza_usata = 5.0
+            peso_basso_forza = df.loc[weights[weights <= peso].max(), pendenza_usata] if any(weights <= peso) else df.loc[weights.min(), pendenza_usata]
+            peso_alto_forza = df.loc[weights[weights >= peso].min(), pendenza_usata] if any(weights >= peso) else df.loc[weights.max(), pendenza_usata]
+            
+            if peso_basso_forza == peso_alto_forza:
+                return int(round(peso_basso_forza))
+            else:
+                return int(round(peso_basso_forza + (peso_alto_forza - peso_basso_forza) * ((peso - weights[weights <= peso].max()) / (weights[weights >= peso].min() - weights[weights <= peso].max()))))
+        
         else:
-            # Interpolazione normale per pendenze oltre 5‰
+            # Interpolazione per pendenze oltre 5‰
             pendenza_bassa = max([s for s in slopes if s <= pendenza], default=slopes.min())
             pendenza_alta = min([s for s in slopes if s >= pendenza], default=slopes.max())
 
