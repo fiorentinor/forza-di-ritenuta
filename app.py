@@ -57,10 +57,10 @@ st.title(t["title"])
 try:
     df = pd.read_csv("ritenuta.csv", index_col=0)
 
-    # Pulizia delle colonne e conversione in float
-    df.columns = [col.replace(',', '.').replace('‰', '').strip() for col in df.columns]
-    df = df.loc[:, df.columns.str.isnumeric()]
-    df.columns = df.columns.astype(float)
+    # Modifica qui per pulire le intestazioni delle colonne in modo robusto
+    # Rimuove spazi, '‰', e sostituisce ',' con '.' prima di convertire in float
+    df.columns = [float(col.replace(',', '.').replace('‰', '').strip()) for col in df.columns]
+    
     slopes = df.columns.sort_values()
     weights = df.index.astype(float)
 
@@ -87,24 +87,10 @@ try:
         # Seleziona la colonna corretta per le pendenze basse senza interpolazione
         if pendenza <= 2.5:
             pendenza_usata = 2.5
-            peso_basso_forza = df.loc[weights[weights <= peso].max(), pendenza_usata] if any(weights <= peso) else df.loc[weights.min(), pendenza_usata]
-            peso_alto_forza = df.loc[weights[weights >= peso].min(), pendenza_usata] if any(weights >= peso) else df.loc[weights.max(), pendenza_usata]
             
-            if peso_basso_forza == peso_alto_forza:
-                return int(round(peso_basso_forza))
-            else:
-                return int(round(peso_basso_forza + (peso_alto_forza - peso_basso_forza) * ((peso - weights[weights <= peso].max()) / (weights[weights >= peso].min() - weights[weights <= peso].max()))))
-        
         elif pendenza <= 5:
             pendenza_usata = 5.0
-            peso_basso_forza = df.loc[weights[weights <= peso].max(), pendenza_usata] if any(weights <= peso) else df.loc[weights.min(), pendenza_usata]
-            peso_alto_forza = df.loc[weights[weights >= peso].min(), pendenza_usata] if any(weights >= peso) else df.loc[weights.max(), pendenza_usata]
             
-            if peso_basso_forza == peso_alto_forza:
-                return int(round(peso_basso_forza))
-            else:
-                return int(round(peso_basso_forza + (peso_alto_forza - peso_basso_forza) * ((peso - weights[weights <= peso].max()) / (weights[weights >= peso].min() - weights[weights <= peso].max()))))
-        
         else:
             # Interpolazione per pendenze oltre 5‰
             pendenza_bassa = max([s for s in slopes if s <= pendenza], default=slopes.min())
@@ -130,6 +116,15 @@ try:
                 return int(round(forza_pendenza_bassa))
             else:
                 return int(round(forza_pendenza_bassa + (forza_pendenza_alta - forza_pendenza_bassa) * ((pendenza - pendenza_bassa) / (pendenza_alta - pendenza_bassa))))
+
+        # Calcolo per le pendenze basse (2.5 e 5.0) dopo la selezione della colonna
+        peso_basso_forza = df.loc[weights[weights <= peso].max(), pendenza_usata] if any(weights <= peso) else df.loc[weights.min(), pendenza_usata]
+        peso_alto_forza = df.loc[weights[weights >= peso].min(), pendenza_usata] if any(weights >= peso) else df.loc[weights.max(), pendenza_usata]
+        
+        if peso_basso_forza == peso_alto_forza:
+            return int(round(peso_basso_forza))
+        else:
+            return int(round(peso_basso_forza + (peso_alto_forza - peso_basso_forza) * ((peso - weights[weights <= peso].max()) / (weights[weights >= peso].min() - weights[weights <= peso].max()))))
 
     # Calcolo e visualizzazione dei risultati
     st.markdown("---")
