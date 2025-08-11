@@ -55,13 +55,13 @@ st.title(t["title"])
 
 # Caricamento del file CSV
 try:
-    
     df = pd.read_csv("ritenuta.csv", index_col=0)
 
-    # Pulizia delle colonne
-    df = df[[col for col in df.columns if col.replace(',', '.').replace('‰', '').strip().replace(' ', '').isdigit()]]
+    # Pulizia delle colonne e conversione in float
+    df.columns = [col.replace(',', '.').replace('‰', '').strip() for col in df.columns]
+    df = df.loc[:, df.columns.str.isnumeric()]
     df.columns = df.columns.astype(float)
-    slopes = df.columns
+    slopes = df.columns.sort_values()
     weights = df.index.astype(float)
 
     # Dizionario delle locomotive e forza generata
@@ -84,33 +84,50 @@ try:
         if pendenza > 30:
             return None
 
-        # Interpolazione per la pendenza
-        pendenza_bassa = max([s for s in slopes if s <= pendenza], default=slopes.min())
-        pendenza_alta = min([s for s in slopes if s >= pendenza], default=slopes.max())
-
-        # Interpola per il peso alla pendenza_bassa
-        peso_basso_forza_pendenza_bassa = df.loc[weights[weights <= peso].max(), pendenza_bassa] if any(weights <= peso) else df.loc[weights.min(), pendenza_bassa]
-        peso_alto_forza_pendenza_bassa = df.loc[weights[weights >= peso].min(), pendenza_bassa] if any(weights >= peso) else df.loc[weights.max(), pendenza_bassa]
-
-        if peso_basso_forza_pendenza_bassa == peso_alto_forza_pendenza_bassa:
-            forza_pendenza_bassa = peso_basso_forza_pendenza_bassa
+        # Modifica alla logica di selezione della pendenza
+        if pendenza <= 2.5:
+            pendenza_col = 2.5
+        elif pendenza <= 5:
+            pendenza_col = 5.0
         else:
-            forza_pendenza_bassa = peso_basso_forza_pendenza_bassa + (peso_alto_forza_pendenza_bassa - peso_basso_forza_pendenza_bassa) * ((peso - weights[weights <= peso].max()) / (weights[weights >= peso].min() - weights[weights <= peso].max()))
+            pendenza_bassa = max([s for s in slopes if s <= pendenza], default=slopes.min())
+            pendenza_alta = min([s for s in slopes if s >= pendenza], default=slopes.max())
+            pendenza_col = pendenza_alta if pendenza_alta == pendenza_bassa else None
 
-        # Interpola per il peso alla pendenza_alta
-        peso_basso_forza_pendenza_alta = df.loc[weights[weights <= peso].max(), pendenza_alta] if any(weights <= peso) else df.loc[weights.min(), pendenza_alta]
-        peso_alto_forza_pendenza_alta = df.loc[weights[weights >= peso].min(), pendenza_alta] if any(weights >= peso) else df.loc[weights.max(), pendenza_alta]
-
-        if peso_basso_forza_pendenza_alta == peso_alto_forza_pendenza_alta:
-            forza_pendenza_alta = peso_basso_forza_pendenza_alta
+        if pendenza_col is not None:
+            # Calcolo solo con la colonna pendenza_col
+            peso_basso_forza = df.loc[weights[weights <= peso].max(), pendenza_col] if any(weights <= peso) else df.loc[weights.min(), pendenza_col]
+            peso_alto_forza = df.loc[weights[weights >= peso].min(), pendenza_col] if any(weights >= peso) else df.loc[weights.max(), pendenza_col]
+            
+            if peso_basso_forza == peso_alto_forza:
+                return int(round(peso_basso_forza))
+            else:
+                return int(round(peso_basso_forza + (peso_alto_forza - peso_basso_forza) * ((peso - weights[weights <= peso].max()) / (weights[weights >= peso].min() - weights[weights <= peso].max()))))
         else:
-            forza_pendenza_alta = peso_basso_forza_pendenza_alta + (peso_alto_forza_pendenza_alta - peso_basso_forza_pendenza_alta) * ((peso - weights[weights <= peso].max()) / (weights[weights >= peso].min() - weights[weights <= peso].max()))
+            # Interpolazione normale per pendenze oltre 5‰
+            pendenza_bassa = max([s for s in slopes if s <= pendenza], default=slopes.min())
+            pendenza_alta = min([s for s in slopes if s >= pendenza], default=slopes.max())
 
-        # Interpola il risultato finale e lo arrotonda a un intero
-        if pendenza_bassa == pendenza_alta:
-            return int(round(forza_pendenza_bassa))
-        else:
-            return int(round(forza_pendenza_bassa + (forza_pendenza_alta - forza_pendenza_bassa) * ((pendenza - pendenza_bassa) / (pendenza_alta - pendenza_bassa))))
+            peso_basso_forza_pendenza_bassa = df.loc[weights[weights <= peso].max(), pendenza_bassa] if any(weights <= peso) else df.loc[weights.min(), pendenza_bassa]
+            peso_alto_forza_pendenza_bassa = df.loc[weights[weights >= peso].min(), pendenza_bassa] if any(weights >= peso) else df.loc[weights.max(), pendenza_bassa]
+            
+            if peso_basso_forza_pendenza_bassa == peso_alto_forza_pendenza_bassa:
+                forza_pendenza_bassa = peso_basso_forza_pendenza_bassa
+            else:
+                forza_pendenza_bassa = peso_basso_forza_pendenza_bassa + (peso_alto_forza_pendenza_bassa - peso_basso_forza_pendenza_bassa) * ((peso - weights[weights <= peso].max()) / (weights[weights >= peso].min() - weights[weights <= peso].max()))
+            
+            peso_basso_forza_pendenza_alta = df.loc[weights[weights <= peso].max(), pendenza_alta] if any(weights <= peso) else df.loc[weights.min(), pendenza_alta]
+            peso_alto_forza_pendenza_alta = df.loc[weights[weights >= peso].min(), pendenza_alta] if any(weights >= peso) else df.loc[weights.max(), pendenza_alta]
+            
+            if peso_basso_forza_pendenza_alta == peso_alto_forza_pendenza_alta:
+                forza_pendenza_alta = peso_basso_forza_pendenza_alta
+            else:
+                forza_pendenza_alta = peso_basso_forza_pendenza_alta + (peso_alto_forza_pendenza_alta - peso_basso_forza_pendenza_alta) * ((peso - weights[weights <= peso].max()) / (weights[weights >= peso].min() - weights[weights <= peso].max()))
+            
+            if pendenza_bassa == pendenza_alta:
+                return int(round(forza_pendenza_bassa))
+            else:
+                return int(round(forza_pendenza_bassa + (forza_pendenza_alta - forza_pendenza_bassa) * ((pendenza - pendenza_bassa) / (pendenza_alta - pendenza_bassa))))
 
     # Calcolo e visualizzazione dei risultati
     st.markdown("---")
