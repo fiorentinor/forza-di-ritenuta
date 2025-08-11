@@ -57,10 +57,24 @@ st.title(t["title"])
 try:
     df = pd.read_csv("ritenuta.csv", index_col=0)
 
-    # Modifica qui per pulire le intestazioni delle colonne in modo robusto
-    # Rimuove spazi, '‰', e sostituisce ',' con '.' prima di convertire in float
-    df.columns = [float(col.replace(',', '.').replace('‰', '').strip()) for col in df.columns]
+    # Pulizia delle colonne per rimuovere caratteri non numerici
+    # e filtrare solo quelle che possono essere convertite in float
+    cleaned_columns = []
+    for col in df.columns:
+        cleaned_col = col.replace(',', '.').replace('‰', '').strip()
+        try:
+            # Prova a convertire la colonna in float. Se ci riesce, la aggiunge.
+            float(cleaned_col)
+            cleaned_columns.append(col)
+        except ValueError:
+            # Ignora le colonne che non possono essere convertite.
+            pass
     
+    df = df[cleaned_columns]
+    
+    # Converte i nomi delle colonne rimanenti in float
+    df.columns = [float(col.replace(',', '.').replace('‰', '').strip()) for col in df.columns]
+
     slopes = df.columns.sort_values()
     weights = df.index.astype(float)
 
